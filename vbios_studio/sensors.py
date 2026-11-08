@@ -43,6 +43,7 @@ REASONS = ((0x4, 'Power limit (Pwr)'), (0x400, 'Voltage ceiling (VRel)'), (0x80,
 class Nvml:
     def __init__(self):
         self.dll = ctypes.WinDLL(os.path.join(os.environ.get('SystemRoot', r'C:\Windows'), 'System32', 'nvml.dll'))
+        self.broken = False
         self.dll.nvmlInit_v2()
         self.handles = []
         n = c_uint()
@@ -54,7 +55,13 @@ class Nvml:
 
     def call(self, name, *args):
         fn = getattr(self.dll, name, None)
-        return fn is not None and fn(*args) == NVML_OK
+        if fn is None:
+            return False
+        try:
+            return fn(*args) == NVML_OK
+        except OSError:                      # the driver invalidated a handle (seen around idle transitions)
+            self.broken = True
+            return False
 
     def u32(self, name, h, *pre):
         v = c_uint()
@@ -331,8 +338,24 @@ class Reader:
             text += '  (the link slows down at idle to save power)'
         return text
 
+    def _reinit(self):
+        """Fresh NVML/NVAPI handles after a crashed call; keeps the card sheet and CPU baseline."""
+        try:
+            self.nvml.dll.nvmlShutdown()
+        except OSError:
+            pass
+        self.nvml = Nvml()
+        self.h = self.nvml.handles[self.index]
+        try:
+            self.api = NvApi()
+            self.nh = self.api.handles.get(self.bus) if self.bus is not None else None
+        except OSError:
+            self.api, self.nh = None, None
+
     # -- live sensors
     def read(self):
+        if self.nvml.broken:
+            self._reinit()
         n, h, out = self.nvml, self.h, []
         add = lambda g, k, v, u='': v is not None and out.append((g, k, v, u))  # noqa: E731
         # clocks
