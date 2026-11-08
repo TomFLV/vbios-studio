@@ -1,0 +1,15 @@
+{
+  "name": "Example (RTX 4070 SUPER): 400 W / 1200 mV",
+  "card": "Gigabyte RTX 4070 SUPER (AD104, 10de:2783, subsystem 1458:4137), VBIOS 95.04.69.40.0E, custom water loop, 600 W 12V-2x6 cable. Check every value for your own card before using it.",
+  "changes": {
+    "power_max_w": 400,
+    "connector_1_power_max_w": 400,
+    "connector_1_power_rated_w": 400,
+    "input_current_max_ma": 40000,
+    "input_current_rated_ma": 35000,
+    "nvvdd_power_threshold_max_w": 390,
+    "nvvdd_power_threshold_rated_w": 390,
+    "nvvdd_rel_equation_max_mv": 1200,
+    "nvvdd_alt_equation_max_mv": 1200
+  }
+}
